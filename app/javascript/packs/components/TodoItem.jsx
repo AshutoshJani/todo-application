@@ -1,11 +1,51 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import axios from 'axios';
+import setAxiosHeaders from './AxiosHeaders';
 
 class TodoItem extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       complete: this.props.todoItem.complete,
+    };
+    this.handleDestroy = this.handleDestroy.bind(this);
+    this.path = `/api/v1/todo_items/${this.props.todoItem.id}`;
+    this.handleChange = this.handleChange.bind(this);
+    this.updateTodoItem = this.updateTodoItem.bind(this);
+    this.inputRef = React.createRef();
+    this.completedRef = React.createRef();
+  }
+  handleChange() {
+    this.updateTodoItem();
+  }
+  updateTodoItem() {
+    this.setState({ complete: this.completedRef.current.checked });
+    setAxiosHeaders();
+    axios
+      .put(this.path, {
+        todo_item: {
+          title: this.inputRef.current.value,
+          complete: this.completedRef.current.checked
+        }
+      })
+      .then(response => {})
+      .catch(error => {
+        console.log(error);
+      });
+  }
+  handleDestroy() {
+    setAxiosHeaders();
+    const confirmation = confirm("Are you sure?");
+    if (confirmation) {
+      axios
+        .delete(this.path)
+        .then(response => {
+          this.props.getTodoItems();
+        })
+        .catch(error => {
+          console.log(error);
+        });
     }
   }
   render() {
@@ -40,6 +80,8 @@ class TodoItem extends React.Component {
             type="text"
             defaultValue={todoItem.title}
             disabled={this.state.complete}
+            onChange={this.handleChange}
+            ref={this.inputRef}
             className="form-control"
             id={`todoItem__title-${todoItem.id}`}
           />
@@ -50,6 +92,8 @@ class TodoItem extends React.Component {
               type="boolean"
               defaultChecked={this.state.complete}
               type="checkbox"
+              onChange={this.handleChange}
+              ref={this.completedRef}
               className="form-check-input"
               id={`complete-${todoItem.id}`}
             />
@@ -60,7 +104,7 @@ class TodoItem extends React.Component {
               Complete?
             </label>
           </div>
-          <button className="btn btn-outline-danger">Delete</button>
+          <button onClick={this.handleDestroy} className="btn btn-outline-danger">Delete</button>
         </td>
       </tr>
     )
@@ -71,4 +115,5 @@ export default TodoItem
 
 TodoItem.propTypes = {
   todoItem: PropTypes.object.isRequired,
+  getTodoItems: PropTypes.func.isRequired
 }
